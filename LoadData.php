@@ -1,8 +1,10 @@
 <? require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php");
 CModule::IncludeModule("iblock");
 require __DIR__ . "/SectionSettings.php";
+require __DIR__ . "/parse-isolux/IsoluxParser.php";
 $sect = new CIBlockSection();
 $arSectionIds = [];
+$arUnicProp = [];
 
 $arSelect = [
     "ID",
@@ -12,7 +14,7 @@ $arSelect = [
     "CODE",
     "SECTION_PAGE_URL"
 ];
-
+$isoLux = new \Isolux\IsoluxParser();
 $i = 0;
 
 foreach ($arSectionsUrl as $section => $children) {
@@ -24,8 +26,7 @@ foreach ($arSectionsUrl as $section => $children) {
     $arSection = $rsSection->GetNext();
     if ($arSection) {
         $arSectionIds[$arSection["NAME"]] = $arSection["ID"];
-    } elseif (1 == 2) {
-        continue;
+    } else {
         $arFields = [
             "NAME" => $section,
             "IBLOCK_ID" => 1,
@@ -55,8 +56,7 @@ foreach ($arSectionsUrl as $section => $children) {
                 $isNotTruSection = true;
             }
         }
-        if (!$arSection || $isNotTruSection && 1 == 2) {
-            continue;
+        if (!$arSection || $isNotTruSection) {
             $arFields = [
                 "NAME" => $childSect,
                 "IBLOCK_ID" => 1,
@@ -87,8 +87,7 @@ foreach ($arSectionsUrl as $section => $children) {
                         $isNotTruSection = true;
                     }
                 }
-                if (!$arSection || $isNotTruSection && 1 == 2) {
-                    continue;
+                if (!$arSection || $isNotTruSection) {
                     $arFields = [
                         "NAME" => $childChildSect,
                         "IBLOCK_ID" => 1,
@@ -104,14 +103,23 @@ foreach ($arSectionsUrl as $section => $children) {
                     }
                 }
 
-                //Ссылка
+                //Если ссылка
+                    $pageItem = $isoLux->parseItemData($childChildElem);
+                    foreach ($pageItem as $item) {
+                        foreach ($item["characteristics"] as $characteristics) {
+                            if (!in_array($characteristics["label"], $arUnicProp)) {
+                                $arUnicProp[] = $characteristics["label"];
+                            }
+                        }
+                    }
             }
         } else {
-            //Если ссылка, а не подсекция.
+            //Если ссылка
+            print_r($childElem);
         }
     }
 }
 
-print_r($arSectionIds);
-
+//print_r($arSectionIds);
+print_r($arUnicProp);
 require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/epilog_after.php");
