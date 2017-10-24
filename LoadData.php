@@ -24,7 +24,7 @@ foreach ($arSectionsUrl as $section => $children) {
     $arSection = $rsSection->GetNext();
     if ($arSection) {
         $arSectionIds[$arSection["NAME"]] = $arSection["ID"];
-    } else {
+    } elseif (1 == 2) {
         continue;
         $arFields = [
             "NAME" => $section,
@@ -55,7 +55,7 @@ foreach ($arSectionsUrl as $section => $children) {
                 $isNotTruSection = true;
             }
         }
-        if (!$arSection || $isNotTruSection) {
+        if (!$arSection || $isNotTruSection && 1 == 2) {
             continue;
             $arFields = [
                 "NAME" => $childSect,
@@ -72,7 +72,40 @@ foreach ($arSectionsUrl as $section => $children) {
             }
         }
         if (is_array($childElem)) {
-            
+            foreach ($childElem as $childChildSect => $childChildElem) {
+                $isNotTruSection = false;
+                $arFilter = [
+                    "NAME" => $childChildSect
+                ];
+                $rsSection = $sect->GetList(["SORT" => "ASC"], $arFilter, false, $arSelect);
+                $arSection = $rsSection->GetNext();
+                if ($arSection) {
+                    $arSectionIds[$arSection["NAME"]] = $arSection["ID"];
+                    if ($arSectionIds[$section] != $arSection["IBLOCK_SECTION_ID"] && $arSection["NAME"] == "Аквапанели") {
+                        $sect->Update($arSection["ID"], ["IBLOCK_SECTION_ID" => $arSectionIds[$section]]);
+                    } else {
+                        $isNotTruSection = true;
+                    }
+                }
+                if (!$arSection || $isNotTruSection && 1 == 2) {
+                    continue;
+                    $arFields = [
+                        "NAME" => $childChildSect,
+                        "IBLOCK_ID" => 1,
+                        "IBLOCK_SECTION_ID" => $arSectionIds[$childSect],
+                        "ACTIVE" => "Y",
+                        "CODE" => CUtil::translit($childChildSect, "ru")
+                    ];
+                    $idNewSect = $sect->Add($arFields);
+                    if (!($idNewSect > 0)) {
+                        echo $sect->LAST_ERROR;
+                    }else {
+                        $arSectionIds[$childChildSect."_new"] = $idNewSect;
+                    }
+                }
+
+                //Ссылка
+            }
         } else {
             //Если ссылка, а не подсекция.
         }
