@@ -1,125 +1,120 @@
-<? require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php");
-CModule::IncludeModule("iblock");
+<?
 require __DIR__ . "/SectionSettings.php";
-require __DIR__ . "/parse-isolux/IsoluxParser.php";
-$sect = new CIBlockSection();
-$arSectionIds = [];
-$arUnicProp = [];
+require __DIR__ . "/SectionProperties.php";
+require __DIR__ . "/BXLoadData.php";
 
-$arSelect = [
-    "ID",
-    "IBLOCK_SECTION_ID",
-    "ACTIVE",
-    "NAME",
-    "CODE",
-    "SECTION_PAGE_URL"
-];
+require __DIR__ . "/parse-isolux/IsoluxParser.php";
+
 $isoLux = new \Isolux\IsoluxParser();
+
+$bxLoadData = new BXLoadData(1);
 $i = 0;
 
-foreach ($arSectionsUrl as $section => $children) {
-    $arFilter = [
-        "NAME" => $section
-    ];
+$step = abs(intval($_REQUEST["step"]));
+$step = empty($step) ? 0 : $step;
+$step = (count($arSectionsUrl) > $step) ? $step : 0;
+$arStepSection = $arSectionsUrl[$step];
 
-    $rsSection = $sect->GetList(["SORT" => "ASC"], $arFilter, false, $arSelect);
-    $arSection = $rsSection->GetNext();
-    if ($arSection) {
-        $arSectionIds[$arSection["NAME"]] = $arSection["ID"];
-    } else {
-        $arFields = [
-            "NAME" => $section,
-            "IBLOCK_ID" => 1,
-            "IBLOCK_SECTION_ID" => "",
-            "ACTIVE" => "Y",
-            "CODE" => CUtil::translit($section, "ru")
-        ];
-        $idNewSect = $sect->Add($arFields);
-        if (!($idNewSect > 0)) {
-            echo $sect->LAST_ERROR;
-        }else {
-            $arSectionIds[$section] = $idNewSect;
+
+
+foreach ($arStepSection as $section => $children) {
+    $arSection = $bxLoadData->findSection($section);
+    $bxLoadData->log("Поиск секции ".$section);
+    if (!$arSection) {
+        $arSection = $bxLoadData->createSection($section);
+        if (!$arSection) {
+            $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+            die();
+        } else {
+            $bxLoadData->log("Создана секция ".$arSection);
+            $bxLoadData->debug($arSection);
         }
+    } else {
+        $bxLoadData->log("Секция найдена");
+        $bxLoadData->debug($arSection);
     }
     foreach ($children as $childSect => $childElem) {
-        $isNotTruSection = false;
-        $arFilter = [
-            "NAME" => $childSect
-        ];
-        $rsSection = $sect->GetList(["SORT" => "ASC"], $arFilter, false, $arSelect);
-        $arSection = $rsSection->GetNext();
-        if ($arSection) {
-            $arSectionIds[$arSection["NAME"]] = $arSection["ID"];
-            if ($arSectionIds[$section] != $arSection["IBLOCK_SECTION_ID"] && $arSection["NAME"] == "Аквапанели") {
-                $sect->Update($arSection["ID"], ["IBLOCK_SECTION_ID" => $arSectionIds[$section]]);
+        $arSection = $bxLoadData->findSection($childSect, $section);
+        $bxLoadData->log("Поиск секции ".$childSect);
+        if (!$arSection) {
+            $arSection = $bxLoadData->createSection($childSect, $section);
+            if (!$arSection) {
+                $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                die();
             } else {
-                $isNotTruSection = true;
+                $bxLoadData->log("Создана секция ".$arSection);
+                $bxLoadData->debug($arSection);
+            }
+        } else {
+            $transferring = $bxLoadData->transferringSection($section, $arSection);
+            if ($transferring) {
+                $bxLoadData->log("Секция перенесена " . $childSect);
+            } else {
+                $arSection = $bxLoadData->createSection($childSect, $section);
+                if (!$arSection) {
+                    $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                    die();
+                } else {
+                    $bxLoadData->log("Создана секция ".$arSection);
+                    $bxLoadData->debug($arSection);
+                }
             }
         }
-        if (!$arSection || $isNotTruSection) {
-            $arFields = [
-                "NAME" => $childSect,
-                "IBLOCK_ID" => 1,
-                "IBLOCK_SECTION_ID" => $arSectionIds[$section],
-                "ACTIVE" => "Y",
-                "CODE" => CUtil::translit($childSect, "ru")
-            ];
-            $idNewSect = $sect->Add($arFields);
-            if (!($idNewSect > 0)) {
-                echo $sect->LAST_ERROR;
-            }else {
-                $arSectionIds[$childSect."_new"] = $idNewSect;
-            }
-        }
+
         if (is_array($childElem)) {
             foreach ($childElem as $childChildSect => $childChildElem) {
-                $isNotTruSection = false;
-                $arFilter = [
-                    "NAME" => $childChildSect
-                ];
-                $rsSection = $sect->GetList(["SORT" => "ASC"], $arFilter, false, $arSelect);
-                $arSection = $rsSection->GetNext();
-                if ($arSection) {
-                    $arSectionIds[$arSection["NAME"]] = $arSection["ID"];
-                    if ($arSectionIds[$section] != $arSection["IBLOCK_SECTION_ID"] && $arSection["NAME"] == "Аквапанели") {
-                        $sect->Update($arSection["ID"], ["IBLOCK_SECTION_ID" => $arSectionIds[$section]]);
+                $arSection = $bxLoadData->findSection($childChildSect, $childSect);
+                $bxLoadData->log("Поиск секции ".$childChildSect);
+                if (!$arSection) {
+                    $arSection = $bxLoadData->createSection($childChildSect, $childSect);
+                    if (!$arSection) {
+                        $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                        die();
                     } else {
-                        $isNotTruSection = true;
+                        $bxLoadData->log("Создана секция ".$arSection);
+                        $bxLoadData->debug($arSection);
                     }
-                }
-                if (!$arSection || $isNotTruSection) {
-                    $arFields = [
-                        "NAME" => $childChildSect,
-                        "IBLOCK_ID" => 1,
-                        "IBLOCK_SECTION_ID" => $arSectionIds[$childSect],
-                        "ACTIVE" => "Y",
-                        "CODE" => CUtil::translit($childChildSect, "ru")
-                    ];
-                    $idNewSect = $sect->Add($arFields);
-                    if (!($idNewSect > 0)) {
-                        echo $sect->LAST_ERROR;
-                    }else {
-                        $arSectionIds[$childChildSect."_new"] = $idNewSect;
-                    }
-                }
-
-                //Если ссылка
-                    $pageItem = $isoLux->parseItemData($childChildElem);
-                    foreach ($pageItem as $item) {
-                        foreach ($item["characteristics"] as $characteristics) {
-                            if (!in_array($characteristics["label"], $arUnicProp)) {
-                                $arUnicProp[] = $characteristics["label"];
-                            }
+                } else {
+                    $transferring = $bxLoadData->transferringSection($childSect, $arSection);
+                    if ($transferring) {
+                        $bxLoadData->log("Секция перенесена " . $childChildSect);
+                    } else {
+                        $arSection = $bxLoadData->createSection($childSect, $section);
+                        if (!$arSection) {
+                            $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                            die();
+                        } else {
+                            $bxLoadData->log("Создана секция ".$arSection);
+                            $bxLoadData->debug($arSection);
                         }
                     }
+                }
+//              print_r($childElem);
+                //Если ссылка
+                $pageItem = $isoLux->parseItemData($childChildElem);
+                foreach ($pageItem as $item) {
+                    foreach ($item["characteristics"] as $characteristics) {
+                        if (!in_array($characteristics["label"], $arSectionProperties)) {
+                            $arSectionProperties[] = $characteristics["label"];
+                        }
+                    }
+                }
             }
         } else {
             //Если ссылка
-            print_r($childElem);
+//            print_r($childElem);
+            $pageItem = $isoLux->parseItemData($childElem);
+            foreach ($pageItem as $item) {
+                foreach ($item["characteristics"] as $characteristics) {
+                    if (!in_array($characteristics["label"], $arSectionProperties)) {
+                        $arSectionProperties[] = $characteristics["label"];
+                    }
+                }
+            }
+            $i++;
         }
     }
 }
 
-//print_r($arSectionIds);
-print_r($arUnicProp);
-require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/epilog_after.php");
+$bxLoadData->debug($arSectionProperties);
+echo $i;
