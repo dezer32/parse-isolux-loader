@@ -14,13 +14,17 @@ class BXLoadData
 
     private $iblockId;
 
+    private $sectionProp;
+
     /**
      * BXLoadData constructor.
      * @param $iblockId
+     * @param $sectionProp
      */
-    public function __construct($iblockId)
+    public function __construct($iblockId, $sectionProp)
     {
         $this->iblockId = $iblockId;
+        $this->sectionProp = $sectionProp;
         $this->sect = new CIBlockSection();
         $this->prop = new CIBlockProperty();
         $this->arSelect = [
@@ -33,7 +37,6 @@ class BXLoadData
         ];
         $this->sectionIds = [];
     }
-
 
     public function createProduct($arItem, $parentSectionName)
     {
