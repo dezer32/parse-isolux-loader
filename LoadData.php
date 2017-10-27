@@ -2,7 +2,6 @@
 require __DIR__ . "/SectionSettings.php";
 require __DIR__ . "/SectionProperties.php";
 require __DIR__ . "/BXLoadData.php";
-
 require __DIR__ . "/parse-isolux/IsoluxParser.php";
 
 $isoLux = new \Isolux\IsoluxParser();
@@ -12,38 +11,51 @@ $i = 0;
 
 $step = abs(intval($_REQUEST["step"]));
 $step = empty($step) ? 0 : $step;
-$step = (count($arSectionsUrl) > $step) ? $step : 0;
-$arStepSection = $arSectionsUrl[$step];
-
+$inStep = 0;
+foreach ($arSectionsUrl as $sectionUrl => $subsection) {
+    $arStepSection[$sectionUrl] = $subsection;
+    if ($inStep == $step) {
+        unset($arStepSection);
+        $arStepSection[$sectionUrl] = $subsection;
+        break;
+    }
+    $inStep++;
+}
+for ($i = 0; $i < count($arSectionsUrl); $i++) {
+    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
+}
+echo "<br />\r\n";
+//$step = (count($arSectionsUrl) > $step) ? $step : 0;
+//$arStepSection = $arSectionsUrl[$step];
 
 
 foreach ($arStepSection as $section => $children) {
     $arSection = $bxLoadData->findSection($section);
-    $bxLoadData->log("Поиск секции ".$section);
+    $bxLoadData->log("Поиск секции " . $section);
     if (!$arSection) {
         $arSection = $bxLoadData->createSection($section);
         if (!$arSection) {
-            $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+            $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
             die();
         } else {
-            $bxLoadData->log("Создана секция ".$arSection);
-            $bxLoadData->debug($arSection);
+            $bxLoadData->log("Создана секция " . $arSection);
+//            $bxLoadData->debug($arSection);
         }
     } else {
         $bxLoadData->log("Секция найдена");
-        $bxLoadData->debug($arSection);
+//        $bxLoadData->debug($arSection);
     }
     foreach ($children as $childSect => $childElem) {
         $arSection = $bxLoadData->findSection($childSect, $section);
-        $bxLoadData->log("Поиск секции ".$childSect);
+        $bxLoadData->log("Поиск секции " . $childSect);
         if (!$arSection) {
             $arSection = $bxLoadData->createSection($childSect, $section);
             if (!$arSection) {
-                $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
                 die();
             } else {
-                $bxLoadData->log("Создана секция ".$arSection);
-                $bxLoadData->debug($arSection);
+                $bxLoadData->log("Создана секция " . $arSection);
+//                $bxLoadData->debug($arSection);
             }
         } else {
             $transferring = $bxLoadData->transferringSection($section, $arSection);
@@ -52,11 +64,11 @@ foreach ($arStepSection as $section => $children) {
             } else {
                 $arSection = $bxLoadData->createSection($childSect, $section);
                 if (!$arSection) {
-                    $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                    $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
                     die();
                 } else {
-                    $bxLoadData->log("Создана секция ".$arSection);
-                    $bxLoadData->debug($arSection);
+                    $bxLoadData->log("Создана секция " . $arSection);
+//                    $bxLoadData->debug($arSection);
                 }
             }
         }
@@ -64,15 +76,15 @@ foreach ($arStepSection as $section => $children) {
         if (is_array($childElem)) {
             foreach ($childElem as $childChildSect => $childChildElem) {
                 $arSection = $bxLoadData->findSection($childChildSect, $childSect);
-                $bxLoadData->log("Поиск секции ".$childChildSect);
+                $bxLoadData->log("Поиск секции " . $childChildSect);
                 if (!$arSection) {
                     $arSection = $bxLoadData->createSection($childChildSect, $childSect);
                     if (!$arSection) {
-                        $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                        $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
                         die();
                     } else {
-                        $bxLoadData->log("Создана секция ".$arSection);
-                        $bxLoadData->debug($arSection);
+                        $bxLoadData->log("Создана секция " . $arSection);
+//                        $bxLoadData->debug($arSection);
                     }
                 } else {
                     $transferring = $bxLoadData->transferringSection($childSect, $arSection);
@@ -81,11 +93,11 @@ foreach ($arStepSection as $section => $children) {
                     } else {
                         $arSection = $bxLoadData->createSection($childSect, $section);
                         if (!$arSection) {
-                            $bxLoadData->log("Ошибка ".$bxLoadData->getLastError());
+                            $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
                             die();
                         } else {
-                            $bxLoadData->log("Создана секция ".$arSection);
-                            $bxLoadData->debug($arSection);
+                            $bxLoadData->log("Создана секция " . $arSection);
+//                            $bxLoadData->debug($arSection);
                         }
                     }
                 }
@@ -99,6 +111,7 @@ foreach ($arStepSection as $section => $children) {
                         }
                     }
                 }
+                $i++;
             }
         } else {
             //Если ссылка
@@ -115,6 +128,8 @@ foreach ($arStepSection as $section => $children) {
         }
     }
 }
-
-$bxLoadData->debug($arSectionProperties);
-echo $i;
+for ($i = 0; $i < count($arSectionsUrl); $i++) {
+    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
+}
+echo "<br />\r\n";
+print_r($arSectionProperties);

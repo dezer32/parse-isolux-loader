@@ -6,6 +6,7 @@ class BXLoadData
 {
 
     private $sect;
+    private $prop;
 
     private $arSelect;
 
@@ -21,6 +22,7 @@ class BXLoadData
     {
         $this->iblockId = $iblockId;
         $this->sect = new CIBlockSection();
+        $this->prop = new CIBlockProperty();
         $this->arSelect = [
             "ID",
             "IBLOCK_SECTION_ID",
@@ -33,9 +35,43 @@ class BXLoadData
     }
 
 
-    public function createProduct()
+    public function createProduct($arItem, $parentSectionName)
     {
+        if (!empty($this->sectionIds[$parentSectionName])) {
+            $sectionId = $this->sectionIds[$parentSectionName];
+        } else {
+            $sectionId = "";
+        }
 
+        $arProp = [];
+
+        $arFieldsProducts = [
+            "IBLOCK_ID" => $this->iblockId,
+            "IBLOCK_SECTION_ID" => $sectionId,
+            "PROPERTY_VALUE" => $arProp,
+            "ACTIVE" => "Y",
+            "NAME" => $arItem["name"],
+            "DETAIL_TEXT" => $arItem["description"],
+
+        ];
+    }
+
+    public function createProperties($name) {
+        $arFields = [
+            "NAME" => $name,
+            "ACTIVE" => "Y",
+            "SORT" => "500",
+            "CODE" => strtoupper(CUtil::translit($name, "ru")),
+            "PROPERTY_TYPE" => "S",
+            "USER_TYPE" => "text",
+            "IBLOCK_ID" => $this->iblockId,
+        ];
+        $idProp = $this->prop->Add($arFields);
+        if ($idProp > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function transferringSection($parentSectionName, $arSection)
