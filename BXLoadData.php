@@ -44,10 +44,16 @@ class BXLoadData
 
     public function createProduct($arItem, $parentSectionName)
     {
+
         if (!empty($this->sectionIds[$parentSectionName])) {
             $sectionId = $this->sectionIds[$parentSectionName];
         } else {
             $sectionId = "";
+        }
+
+        $findElem = $this->findProduct($arItem["name"]);
+        if ($findElem && $findElem["IBLOCK_SECTION_ID"] != $sectionId) {
+            return $this->addToSectionProduct($findElem["ID"], $sectionId);
         }
 
         $arProp = [
@@ -63,26 +69,44 @@ class BXLoadData
             $arProp[$propName] = $characteristic["data"];
         }
 
-//        $pictures = [];
-//
-//        foreach ($arItem["img"] as $img) {
-//            $pictures[] = CFile::MakeFileArray($img);
-//        }
-
         $pictures = CFile::MakeFileArray($arItem["img"][0]);
 
         $arFieldsProducts = [
             "IBLOCK_ID" => $this->iblockId,
             "IBLOCK_SECTION_ID" => $sectionId,
-            "PROPERTY_VALUE" => $arProp,
+            "PROPERTY_VALUES" => $arProp,
             "ACTIVE" => "Y",
             "NAME" => $arItem["name"],
+            "CODE" => strtolower($this->rusToTranslit($arItem["name"])),
             "DETAIL_TEXT" => $arItem["description"],
             "DETAIL_PICTURE" => $pictures
         ];
         $idElem = $this->elem->Add($arFieldsProducts);
         if ($idElem > 0) {
             return $arFieldsProducts;
+        } else {
+            return false;
+        }
+    }
+
+    public function addToSectionProduct($id, $sectionId) {
+        $oldSection = CIBlockElement::GetElementGroups($id);
+        $newSection = [$sectionId];
+        while ($arGroup = $oldSection->Fetch()) {
+            $newSection[] = $arGroup["ID"];
+        }
+        return CIBlockElement::SetElementSection($id, $newSection);
+    }
+
+    public function findProduct($name) {
+        $arFilter = [
+            "IBLOCK_ID" => $this->iblockId,
+            "NAME" => $name
+        ];
+        $rsElem = $this->elem->GetList([], $arFilter);
+        $arElem = $rsElem->Fetch();
+        if ($arElem) {
+            return $arElem;
         } else {
             return false;
         }
@@ -102,10 +126,10 @@ class BXLoadData
                 "SORT" => "500",
                 "CODE" => $propLatName,
                 "PROPERTY_TYPE" => "S",
-                "USER_TYPE" => "text",
                 "IBLOCK_ID" => $this->iblockId,
             ];
             $idProp = $this->prop->Add($arFields);
+            $this->sectionProp[$name] = $propLatName;
             if ($idProp > 0) {
                 return $propLatName;
             } else {
@@ -144,7 +168,7 @@ class BXLoadData
             "IBLOCK_ID" => $this->iblockId,
             "IBLOCK_SECTION_ID" => $sectionId,
             "ACTIVE" => "Y",
-            "CODE" => CUtil::translit($sectionName, "ru")
+            "CODE" => $this->rusToTranslit($sectionName)
         ];
         $idNewSect = $this->sect->Add($arFields);
         if (!($idNewSect > 0)) {
@@ -234,6 +258,14 @@ class BXLoadData
             ' ' => '_'
         );
         return strtr($string, $converter);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSectionProp()
+    {
+        return $this->sectionProp;
     }
 }
 

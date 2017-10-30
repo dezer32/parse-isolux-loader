@@ -9,8 +9,8 @@ $isoLux = new \Isolux\IsoluxParser();
 $bxLoadData = new BXLoadData(1, $arSectionProperties);
 $test = 0;
 
-//$name = "Влагостойкость";
-//$bxLoadData->debug($bxLoadData->rusToTranslit($name));
+//$name = "Смесь сухая напольная Eurocol 976 Europlan Project 25 кг";
+//$bxLoadData->debug($bxLoadData->findProduct($name));
 //die();
 
 $step = abs(intval($_REQUEST["step"]));
@@ -107,42 +107,41 @@ foreach ($arStepSection as $section => $children) {
                 }
 //              print_r($childElem);
                 //Если ссылка
-                /*$pageItem = $isoLux->parseItemData($childChildElem);
-                foreach ($pageItem as $item) {
-                    foreach ($item["characteristics"] as $characteristics) {
-                        if (!in_array($characteristics["label"], $arSectionProperties)) {
-                            $arSectionProperties[] = $characteristics["label"];
-                        }
-                    }
-                }
-                $bxLoadData->debug($pageItem);
-                $test++;*/
-            }
-        } else {
-//            print_r($childElem);
-            //Если ссылка
-            if ($test < 1) {
-                $pageItem = $isoLux->parseItemData($childElem);
+
+                $pageItem = $isoLux->parseItemData($childChildElem);
                 foreach ($pageItem as $item) {
                     $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
                     if ($resCreateProduct == false) {
                         echo $bxLoadData->getLastError();
-                        $bxLoadData->log("Ошибка создания продукта ".$item["name"]);
+                        $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
                     } else {
-                        $bxLoadData->log("Продукт создан ".$item["name"]);
+                        $bxLoadData->log("Продукт создан " . $item["name"]);
                         $bxLoadData->debug($resCreateProduct);
                     }
                 }
                 $bxLoadData->debug($pageItem);
-                $test++;
-            } else {
-                break;
             }
+        } else {
+//            print_r($childElem);
+            //Если ссылка
+            $pageItem = $isoLux->parseItemData($childElem);
+            foreach ($pageItem as $item) {
+                $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
+                if ($resCreateProduct == false) {
+                    echo $bxLoadData->getLastError();
+                    $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
+                } else {
+                    $bxLoadData->log("Продукт создан " . $item["name"]);
+                    $bxLoadData->debug($resCreateProduct);
+                }
+            }
+            $bxLoadData->debug($pageItem);
         }
     }
 }
+
+$bxLoadData->debug($bxLoadData->getSectionProp());
 for ($i = 0; $i < count($arSectionsUrl); $i++) {
     echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
 }
-echo "<br />\r\n" .
-    "Выполненных операций: " . $test;
+echo "<br />\r\n";
