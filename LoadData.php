@@ -6,8 +6,12 @@ require __DIR__ . "/parse-isolux/IsoluxParser.php";
 
 $isoLux = new \Isolux\IsoluxParser();
 
-$bxLoadData = new BXLoadData(1);
+$bxLoadData = new BXLoadData(1, $arSectionProperties);
 $test = 0;
+
+//$name = "Влагостойкость";
+//$bxLoadData->debug($bxLoadData->rusToTranslit($name));
+//die();
 
 $step = abs(intval($_REQUEST["step"]));
 $step = empty($step) ? 0 : $step;
@@ -103,28 +107,32 @@ foreach ($arStepSection as $section => $children) {
                 }
 //              print_r($childElem);
                 //Если ссылка
-//                $pageItem = $isoLux->parseItemData($childChildElem);
-//                foreach ($pageItem as $item) {
-//                    foreach ($item["characteristics"] as $characteristics) {
-//                        if (!in_array($characteristics["label"], $arSectionProperties)) {
-//                            $arSectionProperties[] = $characteristics["label"];
-//                        }
-//                    }
-//                }
-//                $i++;
+                /*$pageItem = $isoLux->parseItemData($childChildElem);
+                foreach ($pageItem as $item) {
+                    foreach ($item["characteristics"] as $characteristics) {
+                        if (!in_array($characteristics["label"], $arSectionProperties)) {
+                            $arSectionProperties[] = $characteristics["label"];
+                        }
+                    }
+                }
+                $bxLoadData->debug($pageItem);
+                $test++;*/
             }
         } else {
-            //Если ссылка
 //            print_r($childElem);
+            //Если ссылка
             if ($test < 1) {
                 $pageItem = $isoLux->parseItemData($childElem);
-//                foreach ($pageItem as $item) {
-//                    foreach ($item["characteristics"] as $characteristics) {
-//                        if (!in_array($characteristics["label"], $arSectionProperties)) {
-//                            $arSectionProperties[] = $characteristics["label"];
-//                        }
-//                    }
-//                }
+                foreach ($pageItem as $item) {
+                    $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
+                    if ($resCreateProduct == false) {
+                        echo $bxLoadData->getLastError();
+                        $bxLoadData->log("Ошибка создания продукта ".$item["name"]);
+                    } else {
+                        $bxLoadData->log("Продукт создан ".$item["name"]);
+                        $bxLoadData->debug($resCreateProduct);
+                    }
+                }
                 $bxLoadData->debug($pageItem);
                 $test++;
             } else {
@@ -136,5 +144,5 @@ foreach ($arStepSection as $section => $children) {
 for ($i = 0; $i < count($arSectionsUrl); $i++) {
     echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
 }
-echo "<br />\r\n".$test;
-//print_r($arSectionProperties);
+echo "<br />\r\n" .
+    "Выполненных операций: " . $test;
