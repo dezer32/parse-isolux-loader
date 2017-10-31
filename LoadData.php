@@ -1,19 +1,16 @@
 <?
-require __DIR__ . "/SectionSettings.php";
+ini_set('max_execution_time', 300);
+
 require __DIR__ . "/SectionProperties.php";
+require __DIR__ . "/SectionSettings.php";
 require __DIR__ . "/BXLoadData.php";
 require __DIR__ . "/parse-isolux/IsoluxParser.php";
 
 $isoLux = new \Isolux\IsoluxParser();
 
 $bxLoadData = new BXLoadData(1, $arSectionProperties);
-$test = 0;
 
-//$name = "Смесь сухая напольная Eurocol 976 Europlan Project 25 кг";
-//$bxLoadData->debug($bxLoadData->findProduct($name));
-//die();
-
-$step = abs(intval($_REQUEST["step"]));
+/*$step = abs(intval($_REQUEST["step"]));
 $step = empty($step) ? 0 : $step;
 $inStep = 0;
 foreach ($arSectionsUrl as $sectionUrl => $subsection) {
@@ -24,124 +21,47 @@ foreach ($arSectionsUrl as $sectionUrl => $subsection) {
         break;
     }
     $inStep++;
-}
-for ($i = 0; $i < count($arSectionsUrl); $i++) {
-    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
-}
-echo "<br />\r\n";
-//$step = (count($arSectionsUrl) > $step) ? $step : 0;
-//$arStepSection = $arSectionsUrl[$step];
+}*/
 
-
-foreach ($arStepSection as $section => $children) {
-    $arSection = $bxLoadData->findSection($section);
-    $bxLoadData->log("Поиск секции " . $section);
-    if (!$arSection) {
-        $arSection = $bxLoadData->createSection($section);
-        if (!$arSection) {
-            $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
-            die();
-        } else {
-            $bxLoadData->log("Создана секция " . $arSection);
-//            $bxLoadData->debug($arSection);
-        }
-    } else {
-        $bxLoadData->log("Секция найдена");
-//        $bxLoadData->debug($arSection);
+foreach ($arSectionsUrl as $section => $child) {
+    if ($bxLoadData->findSection($section) == false) {
+        die();
     }
-    foreach ($children as $childSect => $childElem) {
-        $arSection = $bxLoadData->findSection($childSect, $section);
-        $bxLoadData->log("Поиск секции " . $childSect);
-        if (!$arSection) {
-            $arSection = $bxLoadData->createSection($childSect, $section);
-            if (!$arSection) {
-                $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
+    if (is_array($child)) {
+        foreach ($child as $childSection => $childElem) {
+            if ($bxLoadData->findSection($childSection, $section) == false) {
                 die();
-            } else {
-                $bxLoadData->log("Создана секция " . $arSection);
-//                $bxLoadData->debug($arSection);
             }
-        } else {
-            $transferring = $bxLoadData->transferringSection($section, $arSection);
-            if ($transferring) {
-                $bxLoadData->log("Секция перенесена " . $childSect);
-            } else {
-                $arSection = $bxLoadData->createSection($childSect, $section);
-                if (!$arSection) {
-                    $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
-                    die();
-                } else {
-                    $bxLoadData->log("Создана секция " . $arSection);
-//                    $bxLoadData->debug($arSection);
-                }
-            }
-        }
-
-        if (is_array($childElem)) {
-            foreach ($childElem as $childChildSect => $childChildElem) {
-                $arSection = $bxLoadData->findSection($childChildSect, $childSect);
-                $bxLoadData->log("Поиск секции " . $childChildSect);
-                if (!$arSection) {
-                    $arSection = $bxLoadData->createSection($childChildSect, $childSect);
-                    if (!$arSection) {
-                        $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
+            if (is_array($childElem)) {
+                foreach ($childElem as $childChildSect => $childChildElem) {
+                    if ($bxLoadData->findSection($childChildSect, $childSection) == false) {
                         die();
-                    } else {
-                        $bxLoadData->log("Создана секция " . $arSection);
-//                        $bxLoadData->debug($arSection);
                     }
-                } else {
-                    $transferring = $bxLoadData->transferringSection($childSect, $arSection);
-                    if ($transferring) {
-                        $bxLoadData->log("Секция перенесена " . $childChildSect);
-                    } else {
-                        $arSection = $bxLoadData->createSection($childSect, $section);
-                        if (!$arSection) {
-                            $bxLoadData->log("Ошибка " . $bxLoadData->getLastError());
-                            die();
+                    $pageDom = $isoLux->parseItemData($childChildElem);
+                    foreach ($pageItem as $item) {
+                        $findProduct = $bxLoadData->findProduct($item["name"]);
+                        if ($findProduct == false) {
+                            if (!$bxLoadData->createProduct($item, $childChildSect)) {
+                                die();
+                            }
                         } else {
-                            $bxLoadData->log("Создана секция " . $arSection);
-//                            $bxLoadData->debug($arSection);
+                            $bxLoadData->addToSectionProduct($findProduct["ID"], $childChildSect);
                         }
                     }
                 }
-//              print_r($childElem);
-                //Если ссылка
-
-                $pageItem = $isoLux->parseItemData($childChildElem);
+            } else {
+                $pageItem = $isoLux->parseItemData($childElem);
                 foreach ($pageItem as $item) {
-                    $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
-                    if ($resCreateProduct == false) {
-                        echo $bxLoadData->getLastError();
-                        $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
+                    $findProduct = $bxLoadData->findProduct($item["name"]);
+                    if ($findProduct == false) {
+                        if (!$bxLoadData->createProduct($item, $childSection)) {
+                            die();
+                        }
                     } else {
-                        $bxLoadData->log("Продукт создан " . $item["name"]);
-                        $bxLoadData->debug($resCreateProduct);
+                        $bxLoadData->addToSectionProduct($findProduct["ID"], $childSection);
                     }
                 }
-                $bxLoadData->debug($pageItem);
             }
-        } else {
-//            print_r($childElem);
-            //Если ссылка
-            $pageItem = $isoLux->parseItemData($childElem);
-            foreach ($pageItem as $item) {
-                $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
-                if ($resCreateProduct == false) {
-                    echo $bxLoadData->getLastError();
-                    $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
-                } else {
-                    $bxLoadData->log("Продукт создан " . $item["name"]);
-                    $bxLoadData->debug($resCreateProduct);
-                }
-            }
-            $bxLoadData->debug($pageItem);
         }
     }
 }
-
-$bxLoadData->debug($bxLoadData->getSectionProp());
-for ($i = 0; $i < count($arSectionsUrl); $i++) {
-    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
-}
-echo "<br />\r\n";

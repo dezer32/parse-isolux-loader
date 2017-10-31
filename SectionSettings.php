@@ -56,7 +56,7 @@ $arSectionsUrl = [
         "Шурупы" => "https://www.isolux.ru/stroymateriali/krepezh-1/shurupi.html?attribute_2185_22=18618",
         "Перфорированный крепеж" => "https://www.isolux.ru/stroymateriali/krepezh-1/perforirovannyy-krepezh.html",
     ],
-    "Керамогранит" => [
+    "Керамический гранит" => [
         "Для улицы" => "https://www.isolux.ru/keramogranit-dlja-ulicy",
         "Для кухни" => "https://www.isolux.ru/keramogranit-dlya-kuhni",
         "Для ванной" => "https://www.isolux.ru/keramogranit-dlya-vannoj-komnaty",
@@ -81,7 +81,7 @@ $arSectionsUrl = [
         "Структурированный" => "https://www.isolux.ru/keramogranit-strukturirovannyj",
         "Гладкий" => "https://www.isolux.ru/keramogranit-gladkij",
     ],
-    "Ручной инструмент" => [
+    "Инструменты для ремонта" => [
         "Кисти" => "https://www.isolux.ru/instrument-i-oborudovaniye/ruchnoy-instrument/malyarnyy-instrument/kisti.html",
         "Валики" => "https://www.isolux.ru/instrument-i-oborudovaniye/ruchnoy-instrument/malyarnyy-instrument/valiki-1.html",
         "Шпателя" => "https://www.isolux.ru/instrument-i-oborudovaniye/ruchnoy-instrument/shtukaturnyy-instrument/shpateli.html",

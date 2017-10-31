@@ -4,6 +4,7 @@ CModule::IncludeModule("iblock");
 
 class BXLoadData
 {
+    const DEBUG = false;
 
     private $sect;
     private $prop;
@@ -23,7 +24,7 @@ class BXLoadData
      * @param $sectionProp
      * @param $productsProp
      */
-    public function __construct($iblockId, $sectionProp)
+    public function __construct($iblockId = 1, $sectionProp = "")
     {
         $this->iblockId = $iblockId;
         $this->sectionProp = $sectionProp;
@@ -44,16 +45,11 @@ class BXLoadData
 
     public function createProduct($arItem, $parentSectionName)
     {
-
+        $this->log("Создаем товар " . $arItem["name"] . " в секции " . $parentSectionName);
         if (!empty($this->sectionIds[$parentSectionName])) {
             $sectionId = $this->sectionIds[$parentSectionName];
         } else {
             $sectionId = "";
-        }
-
-        $findElem = $this->findProduct($arItem["name"]);
-        if ($findElem && $findElem["IBLOCK_SECTION_ID"] != $sectionId) {
-            return $this->addToSectionProduct($findElem["ID"], $sectionId);
         }
 
         $arProp = [
@@ -83,22 +79,33 @@ class BXLoadData
         ];
         $idElem = $this->elem->Add($arFieldsProducts);
         if ($idElem > 0) {
+            $this->log("Товар создан");
             return $arFieldsProducts;
         } else {
+            $this->log("Ошибка создания товара");
             return false;
         }
     }
 
-    public function addToSectionProduct($id, $sectionId) {
+    public function addToSectionProduct($id, $parentSectionName)
+    {
+        $this->log("Перенос товара id=" . $id . " в секцию " . $parentSectionName);
+        if (!empty($this->sectionIds[$parentSectionName])) {
+            $sectionId = $this->sectionIds[$parentSectionName];
+        } else {
+            $sectionId = "";
+        }
         $oldSection = CIBlockElement::GetElementGroups($id);
         $newSection = [$sectionId];
         while ($arGroup = $oldSection->Fetch()) {
             $newSection[] = $arGroup["ID"];
         }
-        return CIBlockElement::SetElementSection($id, $newSection);
+        CIBlockElement::SetElementSection($id, $newSection);
     }
 
-    public function findProduct($name) {
+    public function findProduct($name)
+    {
+        $this->log("Поиск продукта " . $name);
         $arFilter = [
             "IBLOCK_ID" => $this->iblockId,
             "NAME" => $name
@@ -106,8 +113,10 @@ class BXLoadData
         $rsElem = $this->elem->GetList([], $arFilter);
         $arElem = $rsElem->Fetch();
         if ($arElem) {
+            $this->log("Продукт найден");
             return $arElem;
         } else {
+            $this->log("Продукт не найден");
             return false;
         }
     }
@@ -146,20 +155,15 @@ class BXLoadData
 
     public function transferringSection($parentSectionName, $arSection)
     {
-        if ($this->sectionIds[$parentSectionName] != $arSection["IBLOCK_SECTION_ID"] && $arSection["NAME"] == "Аквапанели") {
-            $this->sect->Update($arSection["ID"], ["IBLOCK_SECTION_ID" => $this->sectionIds[$parentSectionName]]);
-            return true;
-        } else if ($this->sectionIds[$parentSectionName] == $arSection["IBLOCK_SECTION_ID"]) {
-            return true;
-        } else {
-            return false;
-        }
+        $this->log("Перенос секции " . $arSection["NAME"] . " в секцию " . $parentSectionName);
+        $this->sect->Update($arSection["ID"], ["IBLOCK_SECTION_ID" => $this->sectionIds[$parentSectionName]]);
     }
 
     public function createSection($sectionName, $parentSectionName = "")
     {
+        $this->log("Создание секции " . $sectionName . " в секции " . ($parentSectionName == "" ? "parent" : $parentSectionName));
         if (!empty($this->sectionIds[$parentSectionName])) {
-            echo $sectionId = $this->sectionIds[$parentSectionName];
+            $sectionId = $this->sectionIds[$parentSectionName];
         } else {
             $sectionId = "";
         }
@@ -172,9 +176,11 @@ class BXLoadData
         ];
         $idNewSect = $this->sect->Add($arFields);
         if (!($idNewSect > 0)) {
+            $this->log("Секция не создана (" . $this->getLastError() . ")");
             return false;
         } else {
             $this->sectionIds[$sectionName] = $idNewSect;
+            $this->log("Секции создана в id=" . ($sectionId == "" ? "parent" : $sectionId) . " (" . $idNewSect . ")");
             return $idNewSect;
         }
     }
@@ -182,6 +188,7 @@ class BXLoadData
 
     public function findSection($sectionName, $parentSectionName = "")
     {
+        $this->log("Поиск секции " . $sectionName . " в секции " . ($parentSectionName == "" ? "parent" : $parentSectionName));
         if (!empty($this->sectionIds[$parentSectionName])) {
             $sectionId = $this->sectionIds[$parentSectionName];
         } else {
@@ -189,16 +196,18 @@ class BXLoadData
         }
         $arFilter = [
             "IBLOCK_ID" => $this->iblockId,
-            "IBLOCK_SECTION_ID" => $sectionId,
+            "SECTION_ID" => $sectionId,
             "NAME" => $sectionName
         ];
-
         $rsSection = $this->sect->GetList(["SORT" => "ASC"], $arFilter, false, $this->arSelect);
         $arSection = $rsSection->GetNext();
         if ($arSection) {
             $this->sectionIds[$arSection["NAME"]] = $arSection["ID"];
+            $this->log("Секция найдена");
+            $this->debug($arSection);
             return $arSection;
         } else {
+            $this->log("Секция не найдена");
             return false;
         }
     }
@@ -215,9 +224,11 @@ class BXLoadData
 
     public function debug($var)
     {
-        echo "<pre>";
-        print_r($var);
-        echo "</pre>";
+        if (self::DEBUG) {
+            echo "<pre>";
+            print_r($var);
+            echo "</pre>";
+        }
     }
 
     /**
@@ -226,6 +237,11 @@ class BXLoadData
     public function getSectionIds()
     {
         return $this->sectionIds;
+    }
+
+    public function getParentSectionByParentSectionName($parentSectionName)
+    {
+        return $this->sectionIds[$parentSectionName];
     }
 
     function rusToTranslit($string)
