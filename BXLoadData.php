@@ -79,7 +79,8 @@ class BXLoadData
             "NAME" => $arItem["name"],
             "CODE" => strtolower($this->rusToTranslit($arItem["name"])),
             "DETAIL_TEXT" => $arItem["description"],
-            "DETAIL_PICTURE" => $pictures
+            "DETAIL_PICTURE" => $pictures,
+            "PREVIEW_PICTURE" => $pictures
         ];
         $idElem = $this->elem->Add($arFieldsProducts);
         if ($idElem > 0) {
@@ -159,7 +160,7 @@ class BXLoadData
     public function createSection($sectionName, $parentSectionName = "")
     {
         if (!empty($this->sectionIds[$parentSectionName])) {
-            echo $sectionId = $this->sectionIds[$parentSectionName];
+            $sectionId = $this->sectionIds[$parentSectionName];
         } else {
             $sectionId = "";
         }
@@ -210,14 +211,14 @@ class BXLoadData
 
     public function log($log)
     {
-        echo $log . "</br>\r\n";
+//        echo $log . "</br>\r\n";
     }
 
     public function debug($var)
     {
-        echo "<pre>";
-        print_r($var);
-        echo "</pre>";
+//        echo "<pre>";
+//        print_r($var);
+//        echo "</pre>";
     }
 
     /**

@@ -1,4 +1,8 @@
 <?
+//$start_time = microtime();
+//$start_array = explode(" ", $start_time);
+//$start_time = $start_array[1] + $start_array[0];
+
 require __DIR__ . "/SectionSettings.php";
 require __DIR__ . "/SectionProperties.php";
 require __DIR__ . "/BXLoadData.php";
@@ -16,23 +20,26 @@ $test = 0;
 $step = abs(intval($_REQUEST["step"]));
 $step = empty($step) ? 0 : $step;
 $inStep = 0;
-foreach ($arSectionsUrl as $sectionUrl => $subsection) {
-    $arStepSection[$sectionUrl] = $subsection;
-    if ($inStep == $step) {
-        unset($arStepSection);
-        $arStepSection[$sectionUrl] = $subsection;
-        break;
-    }
-    $inStep++;
-}
-for ($i = 0; $i < count($arSectionsUrl); $i++) {
-    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
-}
-echo "<br />\r\n";
+//foreach ($arSectionsUrl as $sectionUrl => $subsection) {
+//    $arStepSection[$sectionUrl] = $subsection;
+//    if ($inStep == $step) {
+//        unset($arStepSection);
+//        $arStepSection[$sectionUrl] = $subsection;
+//        break;
+//    }
+//    $inStep++;
+//}
+//for ($i = 0; $i < count($arSectionsUrl); $i++) {
+//    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
+//}
+//echo "<br />\r\n";
 //$step = (count($arSectionsUrl) > $step) ? $step : 0;
 //$arStepSection = $arSectionsUrl[$step];
 
-
+//if ($step == 15) {
+//    die();
+//}
+$arStepSection = $arSectionsUrl;
 foreach ($arStepSection as $section => $children) {
     $arSection = $bxLoadData->findSection($section);
     $bxLoadData->log("Поиск секции " . $section);
@@ -107,12 +114,35 @@ foreach ($arStepSection as $section => $children) {
                 }
 //              print_r($childElem);
                 //Если ссылка
-
-                $pageItem = $isoLux->parseItemData($childChildElem);
+                if ($step == $inStep) {
+                    $pageItem = $isoLux->parseItemData($childChildElem);
+                    foreach ($pageItem as $item) {
+                        $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
+                        if ($resCreateProduct == false) {
+//                            echo $bxLoadData->getLastError();
+                            $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
+                        } else {
+                            $bxLoadData->log("Продукт создан " . $item["name"]);
+                            $bxLoadData->debug($resCreateProduct);
+                        }
+                    }
+                    $bxLoadData->debug($pageItem);
+                    $step++;
+                    header("Location: http://gips.local/custom.ad/isolux/LoadData.php?step=" . $step);
+                    die();
+                } else {
+                    $inStep++;
+                }
+            }
+        } else {
+//            print_r($childElem);
+            //Если ссылка
+            if ($step == $inStep) {
+                $pageItem = $isoLux->parseItemData($childElem);
                 foreach ($pageItem as $item) {
                     $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
                     if ($resCreateProduct == false) {
-                        echo $bxLoadData->getLastError();
+//                        echo $bxLoadData->getLastError();
                         $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
                     } else {
                         $bxLoadData->log("Продукт создан " . $item["name"]);
@@ -120,28 +150,24 @@ foreach ($arStepSection as $section => $children) {
                     }
                 }
                 $bxLoadData->debug($pageItem);
+                $step++;
+                header("Location: http://gips.local/custom.ad/isolux/LoadData.php?step=" . $step);
+                die();
+            } else {
+                $inStep++;
             }
-        } else {
-//            print_r($childElem);
-            //Если ссылка
-            $pageItem = $isoLux->parseItemData($childElem);
-            foreach ($pageItem as $item) {
-                $resCreateProduct = $bxLoadData->createProduct($item, $childSect);
-                if ($resCreateProduct == false) {
-                    echo $bxLoadData->getLastError();
-                    $bxLoadData->log("Ошибка создания продукта " . $item["name"]);
-                } else {
-                    $bxLoadData->log("Продукт создан " . $item["name"]);
-                    $bxLoadData->debug($resCreateProduct);
-                }
-            }
-            $bxLoadData->debug($pageItem);
         }
     }
 }
 
-$bxLoadData->debug($bxLoadData->getSectionProp());
-for ($i = 0; $i < count($arSectionsUrl); $i++) {
-    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
-}
-echo "<br />\r\n";
+//$bxLoadData->debug($bxLoadData->getSectionProp());
+//for ($i = 0; $i < count($arSectionsUrl); $i++) {
+//    echo "<a href='?step=" . $i . "'>" . ($i + 1) . "</a> ";
+//}
+//echo "<br />\r\n" . $inStep;
+//echo "<br />\r\n";
+//$end_time = microtime();
+//$end_array = explode(" ", $end_time);
+//$end_time = $end_array[1] + $end_array[0];
+//$time = $end_time - $start_time;
+//printf("Страница сгенерирована за %f секунд", $time);
