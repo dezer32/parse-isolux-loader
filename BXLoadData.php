@@ -75,7 +75,8 @@ class BXLoadData
             "NAME" => $arItem["name"],
             "CODE" => strtolower($this->rusToTranslit($arItem["name"])),
             "DETAIL_TEXT" => $arItem["description"],
-            "DETAIL_PICTURE" => $pictures
+            "DETAIL_PICTURE" => $pictures,
+            "PREVIEW_PICTURE" => $pictures
         ];
         $idElem = $this->elem->Add($arFieldsProducts);
         if ($idElem > 0) {

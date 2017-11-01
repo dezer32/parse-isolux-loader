@@ -1,5 +1,4 @@
 <?
-ini_set('max_execution_time', 300);
 
 require __DIR__ . "/SectionProperties.php";
 require __DIR__ . "/SectionSettings.php";
@@ -23,6 +22,8 @@ foreach ($arSectionsUrl as $sectionUrl => $subsection) {
     $inStep++;
 }*/
 
+$i = 0;
+
 foreach ($arSectionsUrl as $section => $child) {
     if ($bxLoadData->findSection($section) == false) {
         die();
@@ -37,6 +38,8 @@ foreach ($arSectionsUrl as $section => $child) {
                     if ($bxLoadData->findSection($childChildSect, $childSection) == false) {
                         die();
                     }
+
+                    $i++;
                     $pageDom = $isoLux->parseItemData($childChildElem);
                     foreach ($pageItem as $item) {
                         $findProduct = $bxLoadData->findProduct($item["name"]);
@@ -50,6 +53,11 @@ foreach ($arSectionsUrl as $section => $child) {
                     }
                 }
             } else {
+//                if ($i > 0) {
+//                    break;
+//                } else {
+                    $i++;
+//                }
                 $pageItem = $isoLux->parseItemData($childElem);
                 foreach ($pageItem as $item) {
                     $findProduct = $bxLoadData->findProduct($item["name"]);
@@ -65,3 +73,4 @@ foreach ($arSectionsUrl as $section => $child) {
         }
     }
 }
+echo $i;
