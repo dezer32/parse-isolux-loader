@@ -220,7 +220,7 @@ class BXLoadData
 
     public function log($log)
     {
-        echo $log . "</br>\r\n";
+//        echo $log . "</br>\r\n";
     }
 
     public function debug($var)
